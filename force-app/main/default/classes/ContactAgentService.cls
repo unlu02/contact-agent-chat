@@ -1,6 +1,6 @@
 public with sharing class ContactAgentService {
 
-    // IMPORTANT: Your actual field API name
+    
     private static final String PREF_LANG_FIELD = 'Preferred_Language_c__c';
 
     public class AgentResult {
@@ -21,10 +21,10 @@ public with sharing class ContactAgentService {
             return new AgentResult('Please type a message.', false);
         }
 
-        // Read Contact securely (CRUD + FLS handled inside)
+       
         Contact c = fetchContact(contactId);
 
-        // Commands
+        
         String lowerMsg = msg.toLowerCase();
 
         if (lowerMsg == '/summary') {
@@ -32,7 +32,7 @@ public with sharing class ContactAgentService {
         }
 
         if (lowerMsg.startsWith('/update-lang')) {
-            // format: /update-lang tr
+            
             String[] parts = msg.split('\\s+');
             if (parts.size() < 2) {
                 return new AgentResult('Usage: /update-lang tr', false);
@@ -50,7 +50,7 @@ public with sharing class ContactAgentService {
             return new AgentResult('I could not update Preferred Language (missing permissions or field not accessible).', false);
         }
 
-        // Simple Q&A (demo)
+        
         if (lowerMsg.contains('email')) {
             String email = c.Email;
             if (String.isBlank(email)) {
@@ -64,7 +64,7 @@ public with sharing class ContactAgentService {
             return new AgentResult('The contact name is: ' + (String.isBlank(name) ? '-' : name), false);
         }
 
-        // Default greeting/help
+        
         return new AgentResult(
             'Hi! I\'m Contact Helper. Ask about this contact (e.g., "What\'s this contact\'s email?") or use /summary or /update-lang tr.',
             false
@@ -72,12 +72,12 @@ public with sharing class ContactAgentService {
     }
 
     private static Contact fetchContact(Id contactId) {
-        // Object-level access
+        
         if (!Schema.sObjectType.Contact.isAccessible()) {
             throw new SecurityException('No access to Contact object.');
         }
 
-        // Build field list but only include fields user can access (FLS)
+        
         Set<String> desired = new Set<String>{ 'Id', 'FirstName', 'LastName', 'Email', PREF_LANG_FIELD };
         Map<String, Schema.SObjectField> fmap = Schema.SObjectType.Contact.fields.getMap();
 
@@ -89,7 +89,7 @@ public with sharing class ContactAgentService {
             }
         }
 
-        // Always query at least Id
+       
         if (accessible.isEmpty()) accessible.add('Id');
 
         String soql = 'SELECT ' + String.join(accessible, ',') +
@@ -113,12 +113,12 @@ public with sharing class ContactAgentService {
     }
 
     private static Boolean updatePreferredLanguage(Id contactId, String lang) {
-        // Object-level update
+        
         if (!Schema.sObjectType.Contact.isUpdateable()) {
             return false;
         }
 
-        // Field-level update: dynamic check so it never compile-fails
+      
         Map<String, Schema.SObjectField> fmap = Schema.SObjectType.Contact.fields.getMap();
         if (!fmap.containsKey(PREF_LANG_FIELD)) return false;
         if (!fmap.get(PREF_LANG_FIELD).getDescribe().isUpdateable()) return false;
@@ -126,7 +126,7 @@ public with sharing class ContactAgentService {
         Contact toUpdate = new Contact(Id = contactId);
         toUpdate.put(PREF_LANG_FIELD, lang);
 
-        // Extra safety: strip inaccessible fields
+        
         SObjectAccessDecision dec = Security.stripInaccessible(
             AccessType.UPDATABLE,
             new List<SObject>{ toUpdate }
